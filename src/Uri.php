@@ -16,7 +16,7 @@ class Uri
   protected string $uri;
   protected array $params = [];
 
-  public function __construct( $uri = null, array $params = [] )
+  public function __construct( string $uri = null, array $params = [] )
   {
 
     $this->uri = ! is_null( $uri ) ? $uri : $_SERVER[ 'REQUEST_URI' ];
@@ -62,7 +62,7 @@ class Uri
 
   }
 
-  public function getComponent( $phpUrlConstant )
+  public function getComponent( int $phpUrlConstant )
   {
 
     return parse_url( $this->getUri(), $phpUrlConstant );
@@ -79,7 +79,7 @@ class Uri
 
   }
 
-  public function withComponent( $phpUrlConstant, string $component ) : UriInterface
+  public function withComponent( int $phpUrlConstant, string $component ) : UriInterface
   {
 
     $components = [];
