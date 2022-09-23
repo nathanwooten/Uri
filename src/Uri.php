@@ -1,107 +1,128 @@
 <?php
 
-namespace nathanwooten;
+namespace nathanwooten\Uri;
+
+use nathanwooten\{
+
+  Uri\UriInterface
+
+};
 
 use Exception;
 
-class Uri implements UriInterface
+class Uri
 {
 
-	public string $uri;
+  protected string $uri;
+  protected array $params = [];
 
-	protected $param = [];
+  public function __construct( $uri = null, array $params = [] )
+  {
 
-	public function __construct( $uri = null, array $params = [] )
-	{
+    $this->uri = ! is_null( $uri ) ? $uri : $_SERVER[ 'REQUEST_URI' ];
+    $this->params = $params;
 
-		$this->uri = ! is_null( $uri ) ? $uri : $_SERVER[ 'REQUEST_URI' ];
+  }
 
-		foreach ( $params as $paramName => $paramValue ) {
-			$this->param[ $paramName ] = $paramValue;
-		}
+  public function getUri()
+  {
 
-	}
+    if ( is_null( $this->uri ) ) {
+      return '/';
+    }
 
-	public function withUri( string $uri ) : UriInterface
-	{
+    return $this->uri;
 
-		$clone = clone $this;
-		$clone->uri = $uri;
+  }
 
-		return $clone;
+  public function getTarget()
+  {
 
-	}
+    if ( ! isset( $this->target ) ) {
 
-	public function getUri()
-	{
+      $this->target = '';
 
-		if ( is_null( $this->uri ) ) {
-			return '/';
-		}
+      $path = $this->getComponent( PHP_URL_PATH );
+      $query = $this->getComponent( PHP_URL_QUERY );
+      $fragment = $this->getComponent( PHP_URL_FRAGMENT );
 
-		return $this->uri;
+      if ( $path ) {
+        $this->target .= $path;				
+      }
+      if ( $query ) {
+        $this->target .= '?' . $query;
+      }
+      if ( $fragment ) {
+        $this->target .= $fragment;
+      }
 
-	}
+    }
 
-	public function getTarget()
-	{
+    return $this->target;
 
-		if ( ! isset( $this->target ) ) {
+  }
 
-			$this->target = '';
+  public function getComponent( $phpUrlConstant )
+  {
 
-			$path = $this->getComponent( PHP_URL_PATH );
-			$query = $this->getComponent( PHP_URL_QUERY );
-			$fragment = $this->getComponent( PHP_URL_FRAGMENT );
+    return parse_url( $this->getUri(), $phpUrlConstant );
 
-			if ( $path ) {
-				$this->target .= $path;				
-			}
-			if ( $query ) {
-				$this->target .= '?' . $query;
-			}
-			if ( $fragment ) {
-				$this->target .= $fragment;
-			}
+  }
 
-		}
+  public function withUri( string $uri ) : UriInterface
+  {
 
-		return $this->target;
+    $clone = clone $this;
+    $clone->uri = $uri;
 
-	}
+    return $clone;
 
-	public function getComponent( $phpUrlConstant )
-	{
+  }
 
-		return parse_url( $this->getUri(), $phpUrlConstant );
+  public function withComponent( $phpUrlConstant, string $component ) : UriInterface
+  {
 
-	}
+    $components = [];
+    $componentConstants = [ PHP_URL_SCHEME, PHP_URL_HOST, PHP_URL_PORT, PHP_URL_USER, PHP_URL_PASS, PHP_URL_PATH, PHP_URL_QUERY, PHP_URL_FRAGMENT ];
 
-	public function withComponent( $phpUrlConstant, $value )
-	{
+    foreach ( $componentConstants as $int ) {
+      if ( $phpUrlConstant === $int ) {
+        $components[ $phpUrlConstant ] = $value;
 
-		$components = [];
-		$componentConstants = [ PHP_URL_SCHEME, PHP_URL_HOST, PHP_URL_PORT, PHP_URL_USER, PHP_URL_PASS, PHP_URL_PATH, PHP_URL_QUERY, PHP_URL_FRAGMENT ];
+      } elseif ( in_array( $int, $componentConstants ) ) {
+        $components[ $int ] = $this->getComponent( $int );
+      }
+    }
 
-		foreach ( $componentConstants as $int ) {
-			if ( $phpUrlConstant === $int ) {
-				$components[ $phpUrlConstant ] = $value;
+    return $this->withUri( implode( '', $components ) );
 
-			} else {
-				$components[ $int ] = $this->getComponent( $int );
+  }
 
-			}
-		}
+  public function withParms( array $params = [] ) : UriInterface
+  {
 
-		return $this->withUri( implode( '', $components ) );
+    $clone = clone $this;
 
-	}
+    foreach ( $params as $name => $value ) {
+      $clone->params[ $name ] = $value;
+    }
 
-	public function getParam( $name )
-	{
+    return $clone;
 
-		return isset( $this->param[ $name ] ) ? $this->param[ $name ] : null;
+  }
 
-	}
+  public function getParams()
+  {
+
+    return $this->params;
+
+  }
+
+  public function getParam( $name )
+  {
+
+    return isset( $this->param[ $name ] ) ? $this->param[ $name ] : null;
+
+  }
 
 }
